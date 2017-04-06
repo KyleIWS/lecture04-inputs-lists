@@ -1,5 +1,6 @@
 package edu.uw.inputlistdemo;
 
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
@@ -7,22 +8,27 @@ import android.widget.Button; // This is the line I was looking for!
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.ArrayAdapter;
+import java.util.ArrayList;
 import android.util.Log;
 
 public class MainActivity extends AppCompatActivity {
 
     private static final String TAG = "MainActivity";
-
+    private ArrayAdapter<String> adapter;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.list_layout);
 
         //model
-        String[] data = new String[99];
-        for(int i = 99; i > 0; i--) {
-            data[99-i] = i + " bottles beer on wall";
-        }
+//        String[] data = new String[99];
+//        for(int i = 99; i > 0; i--) {
+//            data[99-i] = i + " bottles beer on wall";
+//        }
+
+        ArrayList<String> data = new ArrayList<String>();
+
+
 
         //view
         //See list_item.xml
@@ -36,7 +42,7 @@ public class MainActivity extends AppCompatActivity {
 
         // Constructor takes a context. Which is basically something that your program
         // is currently running over. Could think of it as the current environment.
-    ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, R.layout.list_item, R.id.txtItem,
+        adapter = new ArrayAdapter<String>(this, R.layout.list_item, R.id.txtItem,
             data);
 
         listView.setAdapter(adapter);
@@ -55,12 +61,38 @@ public class MainActivity extends AppCompatActivity {
     // The parameter passed in is the view for that button I think
     // Many different event handlers
     public void handleButtSearch(View v) {
-        Log.v(TAG, "yo kyle");
-
         EditText searchQuery = (EditText) findViewById(R.id.txtSearch);
-        String text = searchQuery.getText().toString();
+        String textSrch = searchQuery.getText().toString();
 
-        Log.v(TAG, "Searched for " + text);
+        Log.v(TAG, "Searched for " + textSrch);
+
+        // THis is our AsyncTask
+        MovieDownloadTask myTask = new MovieDownloadTask();
+        myTask.execute(textSrch); // begin thread in background. Equivalent to .start()
+    }
+
+    // AA+SyncTask takes in three generics. The input, the progres, and the output (return type)
+    public class MovieDownloadTask extends AsyncTask<String, Void, String[]> {
+        @Override
+        // Takes in a list of parameters passed into execute
+        protected String[] doInBackground(String... params) {
+
+            String[] results = MovieDownloader.downloadMovieData(params[0]);
+            return results;
+        }
+
+        // Gets return from te doInbackground method
+        @Override
+        protected void onPostExecute(String[] movies) {
+            super.onPostExecute(movies);
+
+            if(movies != null) {
+                adapter.clear();
+                for(String movie : movies) {
+                    adapter.add(movie);
+                }
+            }
+        }
     }
 
 }
